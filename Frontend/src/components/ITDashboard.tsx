@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Users, UserPlus, Eye, Search, Calendar } from 'lucide-react';
 import { UserRole } from '../types/auth';
 import '../styles/ITDashboard.css';
 import Navbar from './Navbar';
+import { createUser, fetchUsers, deleteUser, updateUser } from '../database/userService';
 
 interface User {
   id: string;
@@ -32,141 +33,25 @@ interface ITDashboardProps {
 }
 
 const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'users' | 'patients'>('users');
+  const [users, setUsers] = useState<User[]>([]);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({
-    role: 'doctor'
+    role: 'doctor',
   });
+
+
+  const [activeTab, setActiveTab] = useState<'users' | 'patients'>('users');
+  // const [isAddingUser, setIsAddingUser] = useState(false);
+  // const [editingUser, setEditingUser] = useState<User | null>(null);
+  // const [formData, setFormData] = useState<Partial<User>>({
+  //   role: 'doctor'
+  // });
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Sample users data
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      firstName: 'John',
-      lastName: 'Smith',
-      username: 'jsmith',
-      password: 'password123',
-      email: 'john.smith@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 123-4567'
-    },
-    {
-      id: '2',
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      username: 'sjohnson',
-      password: 'password123',
-      email: 'sarah.johnson@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 234-5678'
-    },
-    {
-      id: '3',
-      firstName: 'Michael',
-      lastName: 'Brown',
-      username: 'mbrown',
-      password: 'password123',
-      email: 'michael.brown@hospital.com',
-      role: 'topographer',
-      phone: '+1 (555) 345-6789'
-    },
-    {
-      id: '4',
-      firstName: 'Emily',
-      lastName: 'Davis',
-      username: 'edavis',
-      password: 'password123',
-      email: 'emily.davis@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 456-7890'
-    },
-    {
-      id: '5',
-      firstName: 'David',
-      lastName: 'Wilson',
-      username: 'dwilson',
-      password: 'password123',
-      email: 'david.wilson@hospital.com',
-      role: 'topographer',
-      phone: '+1 (555) 567-8901'
-    },
-    {
-      id: '6',
-      firstName: 'Lisa',
-      lastName: 'Anderson',
-      username: 'landerson',
-      password: 'password123',
-      email: 'lisa.anderson@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 678-9012'
-    },
-    {
-      id: '7',
-      firstName: 'Robert',
-      lastName: 'Taylor',
-      username: 'rtaylor',
-      password: 'password123',
-      email: 'robert.taylor@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 789-0123'
-    },
-    {
-      id: '8',
-      firstName: 'Jennifer',
-      lastName: 'Martinez',
-      username: 'jmartinez',
-      password: 'password123',
-      email: 'jennifer.martinez@hospital.com',
-      role: 'topographer',
-      phone: '+1 (555) 890-1234'
-    },
-    {
-      id: '9',
-      firstName: 'William',
-      lastName: 'Thomas',
-      username: 'wthomas',
-      password: 'password123',
-      email: 'william.thomas@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 901-2345'
-    },
-    {
-      id: '10',
-      firstName: 'Elizabeth',
-      lastName: 'Garcia',
-      username: 'egarcia',
-      password: 'password123',
-      email: 'elizabeth.garcia@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 012-3456'
-    },
-    {
-      id: '11',
-      firstName: 'James',
-      lastName: 'Moore',
-      username: 'jmoore',
-      password: 'password123',
-      email: 'james.moore@hospital.com',
-      role: 'topographer',
-      phone: '+1 (555) 123-4567'
-    },
-    {
-      id: '12',
-      firstName: 'Patricia',
-      lastName: 'Lee',
-      username: 'plee',
-      password: 'password123',
-      email: 'patricia.lee@hospital.com',
-      role: 'doctor',
-      phone: '+1 (555) 234-5678'
-    }
-  ]);
 
   // Sample patients data
   const [patients, setPatients] = useState<Patient[]>([
@@ -180,149 +65,51 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
       prediction: 'Result: Normal\nAccuracy: 95.32%',
       report: 'Regular check-up, no abnormalities detected.',
       dateTime: '2024-03-15T09:30:00Z'
-    },
-    {
-      id: '2',
-      firstName: 'Bob',
-      lastName: 'Smith',
-      age: 45,
-      gender: 'male',
-      idNumber: 'P2024002',
-      prediction: 'Result: Keratoconus\nAccuracy: 87.65%',
-      report: 'Early signs of keratoconus detected. Further monitoring required.',
-      dateTime: '2024-03-15T10:15:00Z'
-    },
-    {
-      id: '3',
-      firstName: 'Carol',
-      lastName: 'Davis',
-      age: 35,
-      gender: 'female',
-      idNumber: 'P2024003',
-      prediction: 'Result: Normal\nAccuracy: 92.18%',
-      report: 'Follow-up examination shows normal results.',
-      dateTime: '2024-03-14T14:30:00Z'
-    },
-    {
-      id: '4',
-      firstName: 'David',
-      lastName: 'Wilson',
-      age: 52,
-      gender: 'male',
-      idNumber: 'P2024004',
-      prediction: 'Result: Suspect\nAccuracy: 78.91%',
-      report: 'Additional testing recommended.',
-      dateTime: '2024-03-14T15:45:00Z'
-    },
-    {
-      id: '5',
-      firstName: 'Emma',
-      lastName: 'Brown',
-      age: 31,
-      gender: 'female',
-      idNumber: 'P2024005',
-      prediction: 'Result: Normal\nAccuracy: 94.67%',
-      report: 'Regular check-up completed successfully.',
-      dateTime: '2024-03-13T11:20:00Z'
-    },
-    {
-      id: '6',
-      firstName: 'Frank',
-      lastName: 'Miller',
-      age: 41,
-      gender: 'male',
-      idNumber: 'P2024006',
-      prediction: 'Result: Keratoconus\nAccuracy: 89.23%',
-      report: 'Moderate keratoconus detected. Treatment plan initiated.',
-      dateTime: '2024-03-13T13:45:00Z'
-    },
-    {
-      id: '7',
-      firstName: 'Grace',
-      lastName: 'Taylor',
-      age: 29,
-      gender: 'female',
-      idNumber: 'P2024007',
-      prediction: 'Result: Normal\nAccuracy: 96.54%',
-      report: 'All measurements within normal range.',
-      dateTime: '2024-03-12T09:15:00Z'
-    },
-    {
-      id: '8',
-      firstName: 'Henry',
-      lastName: 'Anderson',
-      age: 48,
-      gender: 'male',
-      idNumber: 'P2024008',
-      prediction: 'Result: Suspect\nAccuracy: 82.34%',
-      report: 'Follow-up examination scheduled.',
-      dateTime: '2024-03-12T10:30:00Z'
-    },
-    {
-      id: '9',
-      firstName: 'Isabel',
-      lastName: 'Martinez',
-      age: 33,
-      gender: 'female',
-      idNumber: 'P2024009',
-      prediction: 'Result: Normal\nAccuracy: 93.87%',
-      report: 'Regular monitoring recommended.',
-      dateTime: '2024-03-11T14:20:00Z'
-    },
-    {
-      id: '10',
-      firstName: 'Jack',
-      lastName: 'Thomas',
-      age: 39,
-      gender: 'male',
-      idNumber: 'P2024010',
-      prediction: 'Result: Keratoconus\nAccuracy: 88.92%',
-      report: 'Early intervention recommended.',
-      dateTime: '2024-03-11T15:45:00Z'
-    },
-    {
-      id: '11',
-      firstName: 'Karen',
-      lastName: 'White',
-      age: 36,
-      gender: 'female',
-      idNumber: 'P2024011',
-      prediction: 'Result: Normal\nAccuracy: 95.11%',
-      report: 'No significant changes observed.',
-      dateTime: '2024-03-10T11:30:00Z'
-    },
-    {
-      id: '12',
-      firstName: 'Leo',
-      lastName: 'Garcia',
-      age: 44,
-      gender: 'male',
-      idNumber: 'P2024012',
-      prediction: 'Result: Suspect\nAccuracy: 76.45%',
-      report: 'Additional testing scheduled.',
-      dateTime: '2024-03-10T13:15:00Z'
     }
   ]);
 
-  const handleUserSubmit = (e: React.FormEvent) => {
+  // Fetch users from Firestore on component mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      const usersData = await fetchUsers();
+      setUsers(usersData as User[]);
+    };
+    loadUsers();
+  }, []);
+
+
+  // Handle adding or updating a user
+  const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUser) {
-      setUsers(users.map(user => 
-        user.id === editingUser.id ? { ...user, ...formData } as User : user
-      ));
-      setEditingUser(null);
-    } else {
-      const newUser = {
-        ...formData,
-        id: Date.now().toString(),
-      } as User;
-      setUsers([...users, newUser]);
+    if (!formData.username || !formData.password) {
+      alert("Username and password are required!");
+      return;
     }
-    setIsAddingUser(false);
-    setFormData({ role: 'doctor' });
+
+    try {
+      if (editingUser) {
+        await updateUser(formData);
+        setUsers(users.map(user => user.id === editingUser.id ? { ...user, ...formData } as User : user));
+      } else {
+        const newUser = {
+          ...formData,
+          id: Date.now().toString(),
+        } as User;
+        await createUser(newUser);
+        setUsers([...users, newUser]);
+      }
+
+      setEditingUser(null);
+      setIsAddingUser(false);
+      setFormData({ role: 'doctor' });
+    } catch (error) {
+      console.error("Error saving user:", error);
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
+  // Handle deleting a user
+  const handleDeleteUser = async (id: string, username: string) => {
+    await deleteUser(username);
     setUsers(users.filter(user => user.id !== id));
   };
 
@@ -347,14 +134,14 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
 
   // Filter and pagination logic for users
   const filteredUsers = users.filter(user => {
-    const searchString = searchTerm.toLowerCase();
+    const searchString = searchTerm?.toLowerCase() || ""; // Ensure searchTerm is a string
     return (
-      user.firstName.toLowerCase().includes(searchString) ||
-      user.lastName.toLowerCase().includes(searchString) ||
-      user.email.toLowerCase().includes(searchString) ||
-      user.username.toLowerCase().includes(searchString)
+      (user.firstName?.toLowerCase() || "").includes(searchString) ||
+      (user.lastName?.toLowerCase() || "").includes(searchString) ||
+      (user.email?.toLowerCase() || "").includes(searchString) ||
+      (user.username?.toLowerCase() || "").includes(searchString)
     );
-  });
+  });  
 
   const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
@@ -527,7 +314,73 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
             </div>
 
             {isAddingUser ? (
-              <UserForm />
+              <form onSubmit={handleUserSubmit} className="user-form">
+              <div className="form-header">
+                <h3>{editingUser ? 'Edit User' : 'Add New User'}</h3>
+                <button type="button" onClick={() => setIsAddingUser(false)} className="close-button">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="form-group">
+                <label>First Name:</label>
+                <input
+                  type="text"
+                  value={formData.firstName || ''}
+                  onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Name:</label>
+                <input
+                  type="text"
+                  value={formData.lastName || ''}
+                  onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Username:</label>
+                <input
+                  type="text"
+                  value={formData.username || ''}
+                  onChange={e => setFormData({ ...formData, username: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password:</label>
+                <input
+                  type="password"
+                  value={formData.password || ''}
+                  onChange={e => setFormData({ ...formData, password: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email:</label>
+                <input
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Role:</label>
+                <select
+                  value={formData.role || 'doctor'}
+                  onChange={e => setFormData({ ...formData, role: e.target.value as Exclude<UserRole, 'it'> })}
+                >
+                  <option value="doctor">Doctor</option>
+                  <option value="topographer">Topographer</option>
+                </select>
+              </div>
+              <button type="submit" className="submit-button">
+                <Save size={20} />
+                <span>{editingUser ? 'Update' : 'Save'}</span>
+              </button>
+            </form>
             ) : (
               <div className="users-table-container">
                 <table className="users-table">
@@ -554,7 +407,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                             <button onClick={() => handleEditUser(user)} className="edit-button">
                               <Edit2 size={16} />
                             </button>
-                            <button onClick={() => handleDeleteUser(user.id)} className="delete-button">
+                            <button onClick={() => handleDeleteUser(user.id, user.username)} className="delete-button">
                               <Trash2 size={16} />
                             </button>
                           </div>

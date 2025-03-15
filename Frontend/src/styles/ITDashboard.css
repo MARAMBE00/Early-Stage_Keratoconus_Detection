@@ -1,0 +1,381 @@
+.it-dashboard {
+    min-height: 100vh;
+    background: #f8fafc;
+  }
+  
+  .dashboard-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dashboard-header h2 {
+    color: #1e3a8a;
+    font-size: 1.875rem;
+  }
+  
+  .home-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .home-button:hover {
+    background: #2563eb;
+  }
+  
+  .tab-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .tab-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .tab-button:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+  
+  .tab-button.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .section-header h3 {
+    color: #1e3a8a;
+    font-size: 1.5rem;
+  }
+  
+  .add-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .add-button:hover {
+    background: #2563eb;
+  }
+  
+  .users-table-container {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: auto;
+  }
+  
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .users-table th,
+  .users-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .users-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .edit-button,
+  .delete-button,
+  .view-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .edit-button {
+    background: #f1f5f9;
+    color: #3b82f6;
+  }
+  
+  .edit-button:hover {
+    background: #e2e8f0;
+  }
+  
+  .view-button {
+    background: #f1f5f9;
+    color: #3b82f6;
+  }
+  
+  .view-button:hover {
+    background: #e2e8f0;
+  }
+  
+  .delete-button {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+  
+  .delete-button:hover {
+    background: #fecaca;
+  }
+  
+  .user-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-header h3 {
+    font-size: 1.25rem;
+    color: #1e3a8a;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+  }
+  
+  .close-button:hover {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #475569;
+    font-weight: 500;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    ring: 2px solid #bfdbfe;
+  }
+  
+  .submit-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+  
+  .submit-button:hover {
+    background: #2563eb;
+  }
+  
+  .no-users {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+  }
+  
+  .content-section {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  
+  .patient-details {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .detail-item label {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  
+  .detail-item span {
+    color: #1e293b;
+    font-weight: 500;
+  }
+  
+  .prediction-section,
+  .report-section {
+    margin-top: 1.5rem;
+  }
+  
+  .prediction-section h4,
+  .report-section h4 {
+    color: #1e3a8a;
+    margin-bottom: 0.75rem;
+    font-size: 1.125rem;
+  }
+  
+  .prediction-text {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    color: #1e293b;
+  }
+  
+  .report-text {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    color: #1e293b;
+    line-height: 1.5;
+  }
+  
+  @media (max-width: 768px) {
+    .it-dashboard {
+      padding: 1rem;
+    }
+  
+    .dashboard-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+      text-align: center;
+    }
+  
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .tab-buttons {
+      flex-direction: column;
+    }
+  
+    .section-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+  
+    .content-section {
+      grid-template-columns: 1fr;
+    }
+  
+    .users-table th,
+    .users-table td {
+      padding: 0.75rem;
+    }
+  
+    .action-buttons {
+      flex-direction: column;
+    }
+  
+    .users-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }

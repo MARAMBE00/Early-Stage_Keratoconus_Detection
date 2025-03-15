@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserRole, LoginCredentials } from '../types/auth';
 import '../styles/LoginForm.css';
 import { KeyRound, User, ArrowLeft, Eye, Computer, Stethoscope, Camera } from 'lucide-react';
-import axios from 'axios';
+import { validateUser } from '../database/userService';
 
 interface LoginFormProps {
   role: UserRole;
@@ -18,27 +18,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-  
-    try {
-      const response = await axios.post('http://localhost:5000/api/users/login', {
-        username,
-        password,
-        role,  // Ensure role is sent to backend
-      });
-  
-      const { token, user } = response.data;
 
-       // Prevent non-IT users from logging in
-      if (user.role !== role) {
-        setError("Invalid credentials for this role.");
-        return;
-      }
+    console.log("Logging in with:", username, password, "Role:", role);
 
-      localStorage.setItem('token', token); // Save token for authentication
-      onLogin(user);
-    } catch (err) {
-      setError((err as any).response?.data?.message || "Login failed");
+    const user = await validateUser(username, password, role);
+    if (user) {
+      console.log("Login successful:", user);
+      onLogin({ username, password, role });
+      setError('');
+    } else {
+      console.error("Login failed for:", username);
+      setError('Invalid username, password, or role');
     }
   };
 
@@ -71,25 +61,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
   return (
     <div className="login-container">
       <div className="login-content">
-        {/* Login header */}
         <div className="login-header">
           <h1>KeratoScan AI</h1>
         </div>
         
         <form onSubmit={handleSubmit} className="login-form">
-          {/* Back button */}
           <button type="button" onClick={onBack} className="back-button">
             <ArrowLeft size={20} />
             <span>Back</span>
           </button>
           
-          {/* Role header */}
           <div className="role-header">
             {getRoleIcon()}
             <h2>{getRoleTitle()}</h2>
           </div>
           
-          {/* Username and password inputs */}
           <div className="input-group">
             <User className="input-icon" size={20} />
             <input
@@ -119,7 +105,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
             </button>
           </div>
           
-          {/* Error message */}
           {error && <div className="error-message">{error}</div>}
           
           <div className="form-footer">

@@ -259,8 +259,6 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="it-dashboard">
-      <Navbar role="it" onLogout={onLogout} />
-      
       <div className="dashboard-content">
         <div className="tab-buttons">
           <button

@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Search, Eye, Calendar, ChevronLeft, ChevronRight, Upload, FileUp, AlertCircle, CheckCircle2, RotateCcw, X, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import '../styles/DoctorDashboard.css';
-import Navbar from './Navbar';
 
 interface PatientRecord {
   id: string;
@@ -345,8 +344,6 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="doctor-dashboard">
-      <Navbar role="doctor" onLogout={onLogout} username="Dr. John Smith" />
-      
       <div className="dashboard-content">
         <div className="filters-section">
           <div className="search-box">

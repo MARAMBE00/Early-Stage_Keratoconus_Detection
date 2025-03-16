@@ -6,7 +6,7 @@ import { validateUser } from '../database/userService';
 
 interface LoginFormProps {
   role: UserRole;
-  onLogin: (credentials: LoginCredentials) => void;
+  onLogin: (user: { username: string; firstName: string; lastName: string; role: UserRole }) => void;
   onBack: () => void;
 }
 
@@ -24,7 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
     const user = await validateUser(username, password, role);
     if (user) {
       console.log("Login successful:", user);
-      onLogin({ username, password, role });
+      onLogin(user);
       setError('');
     } else {
       console.error("Login failed for:", username);

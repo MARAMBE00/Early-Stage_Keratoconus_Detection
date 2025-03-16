@@ -31,7 +31,12 @@ export const validateUser = async (username: string, password: string, role: str
 
     // Check if the password and role match
     if (userData.password === password && userData.role === role) {
-      return userData; // Success
+      return {
+        username: userData.username,
+        firstName: userData.firstName || "Unknown",
+        lastName: userData.lastName || "User",
+        role: userData.role,
+      };
     } else {
       console.error("Invalid role or password for user:", username);
       return null;
@@ -50,9 +55,14 @@ export const fetchUsers = async () => {
 
 // Function to add a new user to Firestore
 export const createUser = async (userData: any) => {
+  if (!userData.username || !userData.role) {
+    throw new Error("User must have a username and role.");
+  }
+  
   const userRef = doc(usersCollection, userData.username); // Use username as document ID
   await setDoc(userRef, userData);
 };
+
 
 // Function to delete a user from Firestore
 export const deleteUser = async (username: string) => {

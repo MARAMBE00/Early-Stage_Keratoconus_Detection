@@ -9,6 +9,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import AboutUs from './components/AboutUs';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import Footer from './components/Footer';
+import Navbar from './components/Navbar';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import './index.css';
 import './styles/transitions.css';
@@ -19,7 +20,9 @@ function App() {
     isAuthenticated: false,
     role: null,
     username: null,
-  });
+    firstName: null, 
+    lastName: null, 
+  });  
   
   // Add refs for CSSTransition
   const nodeRef = useRef(null);
@@ -28,13 +31,15 @@ function App() {
     setSelectedRole(role);
   };
 
-  const handleLogin = (credentials: LoginCredentials) => {
+  const handleLogin = (user: { username: string; firstName: string; lastName: string; role: UserRole }) => {
     setAuth({
       isAuthenticated: true,
-      role: credentials.role,
-      username: credentials.username,
+      role: user.role,
+      username: user.username,
+      firstName: user.firstName,  
+      lastName: user.lastName,  
     });
-  };
+  };  
 
   const handleBack = () => {
     setSelectedRole(null);
@@ -45,6 +50,8 @@ function App() {
       isAuthenticated: false,
       role: null,
       username: null,
+      firstName: null,
+      lastName: null,
     });
     setSelectedRole(null);
   };
@@ -84,6 +91,14 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 flex flex-col">
+      {auth.isAuthenticated && (
+          <Navbar 
+            role={auth.role as UserRole} 
+            onLogout={handleLogout} 
+            username={`${auth.firstName} ${auth.lastName}`}
+          />
+        )}
+
         <Routes>
           <Route path="/about" element={<AboutUs />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

@@ -47,7 +47,7 @@ const Navbar: React.FC<NavbarProps> = ({ role, onLogout, username }) => {
           {username && (
             <div className="user-info">
               <User size={20} />
-              <span>{username}</span>
+              <span>{username}</span> {/* Display Full Name */}
             </div>
           )}
           <button onClick={onLogout} className="logout-button">

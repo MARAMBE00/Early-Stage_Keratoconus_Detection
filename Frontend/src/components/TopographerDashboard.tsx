@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileUp, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import '../styles/TopographerDashboard.css';
-import Navbar from './Navbar';
 
 interface PatientData {
   firstName: string;
@@ -141,8 +140,6 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
 
   return (
     <div className="topographer-dashboard">
-      <Navbar role="topographer" onLogout={onLogout} username="Michael Brown" />
-      
       <div className="dashboard-content">
         <div className="upload-section">
           <div className="instructions">

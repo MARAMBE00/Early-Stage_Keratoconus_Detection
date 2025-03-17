@@ -4,17 +4,6 @@ import { db } from "./firebaseConfig";
 // Reference to the "users" collection in Firestore
 const usersCollection = collection(db, "users");
 
-// Function to create a user in Firestore (IT will use this later)
-// export const createUser = async (username: string, password: string, role: string) => {
-//   const userDoc = doc(usersCollection, username);
-
-//   await setDoc(userDoc, {
-//     username,
-//     password,
-//     role
-//   });
-// };
-
 // Function to validate user login credentials
 export const validateUser = async (username: string, password: string, role: string) => {
   try {

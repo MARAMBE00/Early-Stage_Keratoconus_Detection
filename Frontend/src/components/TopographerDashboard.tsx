@@ -93,6 +93,30 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       const accuracyPercentage = (data.confidence * 100).toFixed(2);
       const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
       setPrediction(predictionText);
+
+      // Generate the patient ID when the form is about to appear
+      console.log("Fetching next patient ID...");
+      const newPatientID = await getNextPatientID();
+      console.log("New Patient ID:", newPatientID);
+
+      // Convert current date-time to Sri Lanka time (GMT+5:30)
+      const localDateTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Colombo",  // Sri Lanka Timezone
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,  // 24-hour format
+      }).format(new Date());
+      
+      // Set ID & formatted date before showing form
+      setPatientData({
+        idNumber: newPatientID,
+        dateTime: localDateTime, // Save formatted Sri Lanka time
+      });
+
       setShowPatientForm(true);
       
     } catch (err) {
@@ -115,7 +139,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
   const handlePatientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    console.log("Submit button clicked!"); // ✅ Debugging log
+    console.log("Submit button clicked!");
   
     if (!selectedFile) {
       console.error("No image uploaded!");
@@ -130,6 +154,8 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       console.log("Fetching next patient ID...");
       const newPatientID = await getNextPatientID();
       console.log("New Patient ID:", newPatientID);
+
+      setPatientData((prev) => ({ ...prev, idNumber: newPatientID })); // Set ID Number
   
       console.log("Uploading image...");
       const imageUrl = await uploadPatientImage(selectedFile, newPatientID);
@@ -144,7 +170,6 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
         age: patientData.age || 0,
         gender: patientData.gender || "other",
         prediction: prediction || "",
-        report: "",
         dateTime: currentDateTime,
         imageUrl: imageUrl,
       };
@@ -277,6 +302,16 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
               <h3>Patient Information</h3>
               
               <div className="form-group">
+                <label>ID Number:</label>
+                <input
+                  type="text"
+                  value={patientData.idNumber || ""} 
+                  readOnly
+                  className="readonly-field"
+                />
+              </div>
+
+              <div className="form-group">
                 <label>First Name:</label>
                 <input
                   type="text"
@@ -321,18 +356,19 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
               </div>
 
               <div className="form-group">
-                <label>ID Number:</label>
-                <input
-                  type="text"
-                  readOnly 
+                <label>Analysis Result:</label>
+                <textarea
+                  value={prediction || ''}
+                  readOnly
                   className="readonly-field"
                 />
               </div>
 
               <div className="form-group">
-                <label>Analysis Result:</label>
-                <textarea
-                  value={prediction || ''}
+                <label>Date & Time:</label>
+                <input
+                  type="text"
+                  value={patientData.dateTime || ""}
                   readOnly
                   className="readonly-field"
                 />

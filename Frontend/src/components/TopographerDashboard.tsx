@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileUp, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import '../styles/TopographerDashboard.css';
+import { getNextPatientID, uploadPatientImage, savePatientData } from "../database/patientService";
 
 interface PatientData {
   firstName: string;
@@ -111,32 +112,56 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     setError(null);
   };
 
-  const handlePatientSubmit = (e: React.FormEvent) => {
+  const handlePatientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const currentDateTime = new Date().toISOString();
-    const fullPatientData: PatientData = {
-      ...patientData as PatientData,
-      prediction: prediction || '',
-      report: '',
-      dateTime: currentDateTime
-    };
-    
-    // Here you would typically send this data to your backend
-    console.log('Patient data submitted:', fullPatientData);
-    
-    // Reset the form
-    handleTryAgain();
-  };
-
-  // For demonstration purposes, let's simulate a prediction result
-  const simulatePrediction = () => {
-    if (selectedFile && !prediction) {
-      const accuracyPercentage = "99.77";
-      const predictionText = `Result: Keratoconus\nAccuracy: ${accuracyPercentage}%`;
-      setPrediction(predictionText);
-      setShowPatientForm(true);
+  
+    console.log("Submit button clicked!"); // ✅ Debugging log
+  
+    if (!selectedFile) {
+      console.error("No image uploaded!");
+      setError("No image uploaded!");
+      return;
+    }
+  
+    setIsUploading(true);
+    setError(null);
+  
+    try {
+      console.log("Fetching next patient ID...");
+      const newPatientID = await getNextPatientID();
+      console.log("New Patient ID:", newPatientID);
+  
+      console.log("Uploading image...");
+      const imageUrl = await uploadPatientImage(selectedFile, newPatientID);
+      console.log("Image uploaded. URL:", imageUrl);
+  
+      console.log("Saving patient data to Firestore...");
+      const currentDateTime = new Date().toISOString();
+      const fullPatientData = {
+        idNumber: newPatientID,
+        firstName: patientData.firstName || "",
+        lastName: patientData.lastName || "",
+        age: patientData.age || 0,
+        gender: patientData.gender || "other",
+        prediction: prediction || "",
+        report: "",
+        dateTime: currentDateTime,
+        imageUrl: imageUrl,
+      };
+  
+      await savePatientData(fullPatientData);
+      console.log("Patient data saved:", fullPatientData);
+  
+      console.log("Resetting form...");
+      handleTryAgain();
+    } catch (err) {
+      console.error("Error submitting patient data:", err);
+      setError(err instanceof Error ? err.message : "Error saving patient data");
+    } finally {
+      setIsUploading(false);
     }
   };
+  
 
   return (
     <div className="topographer-dashboard">
@@ -201,7 +226,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
               </button>
               <button 
                 className="process-button"
-                onClick={isUploading ? undefined : simulatePrediction}
+                onClick={isUploading ? undefined : handleUpload}
                 disabled={isUploading}
               >
                 {isUploading ? (
@@ -299,9 +324,8 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
                 <label>ID Number:</label>
                 <input
                   type="text"
-                  value={patientData.idNumber || ''}
-                  onChange={e => setPatientData({ ...patientData, idNumber: e.target.value })}
-                  required
+                  readOnly 
+                  className="readonly-field"
                 />
               </div>
 

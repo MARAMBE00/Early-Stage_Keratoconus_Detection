@@ -1,7 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, Eye, Calendar, ChevronLeft, ChevronRight, Upload, FileUp, AlertCircle, CheckCircle2, RotateCcw, X, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import '../styles/DoctorDashboard.css';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../database/firebaseConfig";
 
 interface PatientRecord {
   id: string;
@@ -13,13 +15,21 @@ interface PatientRecord {
   prediction: string;
   report: string;
   dateTime: string;
+  imageUrl: string; 
 }
 
 interface DoctorDashboardProps {
   onLogout: () => void;
 }
 
+interface PredictionResponse {
+  predicted_class: string;
+  confidence: number;
+}
+
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
+  const [patients, setPatients] = useState<PatientRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [filterDate, setFilterDate] = useState('');
@@ -32,22 +42,31 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const patientsPerPage = 10;
 
-  // Sample patients data
-  const dummyPatients: PatientRecord[] = [
-    {
-      id: '1',
-      firstName: 'John',
-      lastName: 'Doe',
-      age: 45,
-      gender: 'male',
-      idNumber: 'ID123456',
-      prediction: 'Result: Normal\nAccuracy: 95.32%',
-      report: 'Patient shows normal corneal topography.',
-      dateTime: '2024-03-15T10:30:00Z'
-    },
-  ];
+  // Fetch patient records from Firestore
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const patientsCollection = collection(db, "patients");
+        const snapshot = await getDocs(patientsCollection);
 
-  const filteredPatients = dummyPatients.filter(patient => {
+        const patientList: PatientRecord[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PatientRecord[];
+
+        setPatients(patientList);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, []);
+
+  // Filtering logic
+  const filteredPatients = patients.filter(patient => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch = 
       patient.firstName.toLowerCase().includes(searchString) ||
@@ -76,7 +95,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
   };
 
   const formatDateTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleString();
+    return new Date(dateTime).toLocaleString("en-GB", { timeZone: "Asia/Colombo" });
   };
 
   const handlePageChange = (page: number) => {
@@ -123,9 +142,24 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     setIsUploading(true);
     setError(null);
 
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const predictionText = `Result: Keratoconus\nAccuracy: 92.45%`;
+      const response = await fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get prediction');
+      }
+
+      const data: PredictionResponse = await response.json();
+      
+      // Format the prediction result with the updated terminology
+      const accuracyPercentage = (data.confidence * 100).toFixed(2);
+      const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
       setPrediction(predictionText);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during prediction');
@@ -149,6 +183,16 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     let yPos = 20;
     const lineHeight = 7;
     const margin = 20;
+
+    // Ensure all values are defined to prevent errors
+    const fullName = `${patient.firstName || "N/A"} ${patient.lastName || "N/A"}`;
+    const idNumber = patient.idNumber || "N/A";
+    const age = patient.age !== undefined ? patient.age.toString() : "N/A";
+    const gender = patient.gender || "N/A";
+    const formattedDate = patient.dateTime ? formatDateTime(patient.dateTime) : "N/A";
+    const prediction = patient.prediction ? patient.prediction.trim() : "N/A"; // Trim extra spaces
+
+    console.log("Formatted Values Before PDF:", { fullName, idNumber, age, gender, formattedDate, prediction });
 
     // Helper function to add a new page
     const addNewPage = () => {
@@ -235,10 +279,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     yPos += 10;
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
-    const predictionLines = patient.prediction.split('\n');
-    predictionLines.forEach(line => {
+
+    const predictionLines = prediction.split('\n').filter(line => line.trim() !== ""); // Remove empty lines
+    predictionLines.forEach((line, index) => {
       doc.text(line, margin + 5, yPos);
-      yPos += lineHeight;
+      yPos += 7; // Add spacing for each new line
     });
 
     // Medical Report Section
@@ -259,15 +304,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.text(patient.report, margin + 5, yPos);
 
     // Add topography images if available
-    if (previewUrl) {
+    if (patient.imageUrl && patient.imageUrl.trim() !== "") { // Ensure URL is valid
       try {
         const img = new Image();
-        img.src = previewUrl;
-        await new Promise((resolve) => {
+        img.src = patient.imageUrl;
+        await new Promise(resolve => {
           img.onload = resolve;
         });
         
-        yPos += 30;
+        yPos += 20;
         checkAndAddNewPage(100);
         
         doc.setFillColor(241, 245, 249);
@@ -276,7 +321,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
         yPos += 10;
         doc.setFontSize(14);
         doc.setTextColor(30, 58, 138);
-        doc.text('Corneal Topography', margin + 5, yPos);
+        doc.text('Corneal Topography Image', margin + 5, yPos);
         
         yPos += 10;
         const imgWidth = 150;
@@ -319,7 +364,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     }
 
     // Add footer to all pages
-    const totalPages = doc.internal.getNumberOfPages();
+    const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
@@ -339,7 +384,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     }
 
     // Save the PDF
-    doc.save(`medical_report_${patient.idNumber}.pdf`);
+    doc.save(`medical_report_${idNumber}.pdf`);
   };
 
   return (
@@ -373,48 +418,53 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
 
         <div className="content-section">
           <div className="patients-list">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>ID Number</th>
-                  <th>Age</th>
-                  <th>Gender</th>
-                  <th>Date & Time</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedPatients.map(patient => (
-                  <tr key={patient.id}>
-                    <td>{`${patient.firstName} ${patient.lastName}`}</td>
-                    <td>{patient.idNumber}</td>
-                    <td>{patient.age}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{patient.gender}</td>
-                    <td>{formatDateTime(patient.dateTime)}</td>
-                    <td>
-                      <button
-                        className="view-button"
-                        onClick={() => handleViewDetails(patient)}
-                      >
-                        <Eye size={16} />
-                        <span>View</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredPatients.length === 0 && (
+          {loading ? (
+              <div className="loading-message">
+                <p>Loading patient records...</p>
+              </div>
+            ) : filteredPatients.length === 0 ? (
               <div className="no-results">
                 <p>No patients found matching your search criteria.</p>
               </div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>ID Number</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Date & Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedPatients.map(patient => (
+                    <tr key={patient.id}>
+                      <td>{`${patient.firstName} ${patient.lastName}`}</td>
+                      <td>{patient.idNumber}</td>
+                      <td>{patient.age}</td>
+                      <td style={{ textTransform: 'capitalize' }}>{patient.gender}</td>
+                      <td>{formatDateTime(patient.dateTime)}</td>
+                      <td>
+                        <button
+                          className="view-button"
+                          onClick={() => handleViewDetails(patient)}
+                        >
+                          <Eye size={16} />
+                          <span>View</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
             {filteredPatients.length > 0 && (
               <div className="pagination">
                 <button
                   className="pagination-button"
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft size={20} />
@@ -424,7 +474,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
                 </span>
                 <button
                   className="pagination-button"
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
                   <ChevronRight size={20} />
@@ -476,18 +526,25 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
-              <div className="prediction-section">
-                <h4>Previous AI Analysis Results</h4>
+              {/* Display Patient Image */}
+              {selectedPatient.imageUrl && (
+                <div className="image-section">
+                  <h4>Corneal Topography Image</h4>
+                  <img src={selectedPatient.imageUrl} alt="Patient Scan" className="patient-image" />
+                </div>
+              )}
+
+              {/* Highlight Result Based on Diagnosis */}
+              <div
+                className={selectedPatient.prediction.includes("Keratoconus") ? "prediction-section red-highlight" : "prediction-section green-highlight"}
+              >
+                <h4>AI Analysis Results</h4>
                 <pre className="prediction-text">{selectedPatient.prediction}</pre>
               </div>
 
-              <div className="report-section">
-                <h4>Medical Report</h4>
-                <p className="report-text">{selectedPatient.report}</p>
-              </div>
 
               <div className="upload-section">
-                <h4>New Scan Analysis</h4>
+                <h4>Scan Analysis</h4>
                 <div
                   className="upload-area"
                   onDragOver={handleDragOver}
@@ -511,8 +568,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
                   ) : (
                     <div className="upload-placeholder">
                       <Upload size={48} />
-                      <p>Click or drag new scan image here</p>
-                      <span>Supported formats: JPG, PNG</span>
+                      <p>Click or drag scan image here</p>
+                      <span>Supported formats: JPG, PNG, JPEG</span>
                     </div>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy, limit } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage } from "./firebaseConfig";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
@@ -91,6 +91,20 @@ export const savePatientData = async (patientData: any) => {
 };
 
 // Delete a Patient from Firestore
-export const deletePatient = async (id: string) => {
-  await deleteDoc(doc(db, "patients", id));
+export const deletePatient = async (id: string, imageUrl?: string) => {
+  try {
+    if (imageUrl) {
+      // Create reference to the image in Firebase Storage
+      const imageRef = ref(storage, imageUrl);
+      await deleteObject(imageRef); // Delete the image
+      console.log("Image deleted from Firebase Storage");
+    }
+
+    // Delete patient record from Firestore
+    await deleteDoc(doc(db, "patients", id));
+    console.log("Patient record deleted from Firestore");
+  } catch (error) {
+    console.error("Error deleting patient or image:", error);
+    throw error;
+  }
 };

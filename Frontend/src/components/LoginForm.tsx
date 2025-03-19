@@ -16,6 +16,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Validate user credentials and login
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -32,6 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
     }
   };
 
+  // Get role title based on role
   const getRoleTitle = () => {
     switch (role) {
       case 'it':
@@ -45,6 +47,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, onLogin, onBack }) => {
     }
   };
 
+  // Get role icon based on role
   const getRoleIcon = () => {
     switch (role) {
       case 'it':

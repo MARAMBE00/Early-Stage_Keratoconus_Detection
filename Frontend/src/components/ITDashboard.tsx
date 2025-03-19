@@ -4,6 +4,8 @@ import { UserRole } from '../types/auth';
 import '../styles/ITDashboard.css';
 import { createUser, fetchUsers, deleteUser, updateUser } from '../database/userService';
 import { fetchPatients, deletePatient } from "../database/patientService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; 
 
 interface User {
   id: string;
@@ -26,6 +28,7 @@ interface Patient {
   prediction?: string;
   report?: string;
   dateTime: string;
+  imageUrl: string; 
 }
 
 interface ITDashboardProps {
@@ -34,6 +37,7 @@ interface ITDashboardProps {
 
 const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
   const [users, setUsers] = useState<User[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({
@@ -43,24 +47,35 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; username: string } | null>(null);
+  const [showPatientConfirmModal, setShowPatientConfirmModal] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<{ 
+    id: string; 
+    fullName: string; 
+    imageUrl?: string; 
+  } | null>(null);  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [patients, setPatients] = useState<Patient[]>([]);
 
-  // Fetch users from Firestore on component mount
+  // Fetch users from Firestore 
   useEffect(() => {
     const loadUsers = async () => {
-      const usersData = await fetchUsers();
-      setUsers(usersData as User[]);
+      try {
+        const usersData = await fetchUsers();
+        setUsers(usersData as User[]);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
     loadUsers();
   }, []);
 
-  // Fetch patients from Firestore on component mount
+  // Fetch patients from Firestore 
   useEffect(() => {
     const loadPatients = async () => {
       try {
-        const patientsData = await fetchPatients(); // Fetch from Firestore
+        const patientsData = await fetchPatients();
         setPatients(patientsData as Patient[]);
       } catch (error) {
         console.error("Error fetching patients:", error);
@@ -69,69 +84,202 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     loadPatients();
   }, []);
 
-  // Handle adding or updating a user
+  // Handle adding or updating a user 
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!formData.username || !formData.password) {
-      alert("Username and password are required!");
+      toast.error("Username and password are required!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
       return;
     }
 
     try {
+      // Check if username already exists in Firestore
+      const existingUser = users.find(user => user.username === formData.username);
+
+      if (existingUser && !editingUser) {
+        // If user exists and we're not in edit mode, prevent duplicate
+        toast.error("Username already exists! Please choose a different username.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
+        return;
+      }
+
       if (editingUser) {
-        await updateUser(formData);
-        setUsers(users.map(user => user.id === editingUser.id ? { ...user, ...formData } as User : user));
+        // Update the existing user in Firestore
+        const updatedUser = {
+          ...editingUser, // Keep the original ID
+          ...formData, // Update fields
+        };
+
+        await updateUser(updatedUser);
+        setUsers(users.map(user => (user.id === editingUser.id ? updatedUser : user)));
+
+        toast.info("User updated successfully! ✅", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
       } else {
+        // Create a new user with a unique ID
         const newUser = {
           ...formData,
           id: Date.now().toString(),
         } as User;
+        
         await createUser(newUser);
         setUsers([...users, newUser]);
+
+        // Show success toast
+        toast.success("User added successfully! 🎉", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
       }
 
       setEditingUser(null);
       setIsAddingUser(false);
       setFormData({ role: 'doctor' });
+
+      // Re-fetch the users list
+      const updatedUsers = await fetchUsers();
+      setUsers(updatedUsers as User[]);
     } catch (error) {
       console.error("Error saving user:", error);
+      toast.error("Failed to add user. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
     }
   };
 
-  // Handle deleting a user
-  const handleDeleteUser = async (id: string, username: string) => {
-    await deleteUser(username);
-    setUsers(users.filter(user => user.id !== id));
+  // Open Confirmation Modal
+  const confirmDeleteUser = (id: string, username: string) => {
+    setUserToDelete({ id, username });
+    setShowConfirmModal(true);
   };
 
-  // Handle deleting a patient from Firestore
-  const handleDeletePatient = async (id: string) => {
+  // Function to show a success toast after deletion
+  const showSuccessToast = (message: string) => {
+    toast.success(message, {
+      position: "top-right",
+      autoClose: 3000, // Closes after 3 seconds
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    });
+  };
+
+  // Handle deleting a user 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+  
     try {
-      await deletePatient(id); // Delete from Firestore
-      setPatients(patients.filter(patient => patient.id !== id)); // Update UI
-      setSelectedPatient(null);
+      await deleteUser(userToDelete.username);
+      setUsers(users.filter((user) => user.id !== userToDelete.id));
+      setShowConfirmModal(false);
+      showSuccessToast("User deleted successfully! 🎉");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete the user. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+    }
+  }; 
+
+  const confirmDeletePatient = (id: string, fullName: string, imageUrl: string) => {
+    setPatientToDelete({ id, fullName, imageUrl });
+    setShowPatientConfirmModal(true);
+  };  
+
+  // Handle deleting a patient
+  const handleDeletePatient = async () => {
+    if (!patientToDelete) return;
+  
+    try {
+      await deletePatient(patientToDelete.id, patientToDelete.imageUrl);
+      setPatients(patients.filter((patient) => patient.id !== patientToDelete.id));
+      setShowPatientConfirmModal(false);
+      
+      toast.success("Patient record and image deleted successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
     } catch (error) {
       console.error("Error deleting patient:", error);
+      toast.error("Failed to delete patient record. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
     }
-  };
+  };  
 
+  // Handle editing a user
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setFormData(user);
     setIsAddingUser(true);
   };
 
+  // Handle viewing a patient 
   const handleViewPatient = (patient: Patient) => {
     setSelectedPatient(patient);
   };
 
+  // Format date and time for display 
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString();
   };
 
-  // Filter and pagination logic for users
+  // Filter users
   const filteredUsers = users.filter(user => {
-    const searchString = searchTerm?.toLowerCase() || ""; // Ensure searchTerm is a string
+    const searchString = searchTerm?.toLowerCase() || "";
     return (
       (user.firstName?.toLowerCase() || "").includes(searchString) ||
       (user.lastName?.toLowerCase() || "").includes(searchString) ||
@@ -140,13 +288,22 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     );
   });  
 
-  const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    Math.min(currentPage * itemsPerPage, filteredUsers.length)
+  );  
 
-  // Filter and paginate patient data
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };  
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [users]);  
+
+  // Filter patients 
   const filteredPatients = patients.filter(patient => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch = (
@@ -168,6 +325,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     currentPage * itemsPerPage
   );
 
+  // User Form Component
   const UserForm = () => (
     <form onSubmit={handleUserSubmit} className="user-form">
       <div className="form-header">
@@ -256,6 +414,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="it-dashboard">
+      <ToastContainer />
       <div className="dashboard-content">
         <div className="tab-buttons">
           <button
@@ -295,10 +454,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                     type="text"
                     placeholder="Search users..."
                     value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
+                    onChange={handleSearch} 
                   />
                 </div>
                 <button onClick={() => setIsAddingUser(true)} className="add-button">
@@ -402,12 +558,26 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                             <button onClick={() => handleEditUser(user)} className="edit-button">
                               <Edit2 size={16} />
                             </button>
-                            {user.username !== "IT" && ( // Hide delete button for IT user
-                              <button onClick={() => handleDeleteUser(user.id, user.username)} className="delete-button">
+                            {/* Hide delete button for IT user */}
+                            {user.username !== "IT" && ( 
+                              <button onClick={() => confirmDeleteUser(user.id, user.username)} className="delete-button">
                                 <Trash2 size={16} />
                               </button>
                             )}
+                             {showConfirmModal && (
+                              <div className="modal-overlay">
+                                <div className="modal">
+                                  <h3>Confirm Deletion</h3>
+                                  <p>Are you sure you want to delete the user: <b>{userToDelete?.username}</b>?</p>
+                                  <div className="modal-buttons">
+                                    <button className="cancel-btn" onClick={() => setShowConfirmModal(false)}>Cancel</button>
+                                    <button className="delete-btn" onClick={handleDeleteUser}>Delete</button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
+
                         </td>
                       </tr>
                     ))}
@@ -426,13 +596,15 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                     >
                       Previous
                     </button>
+
                     <span className="pagination-info">
-                      Page {currentPage} of {totalUserPages}
+                    Page {currentPage} of {totalUserPages}
                     </span>
+                    
                     <button
                       className="pagination-button"
-                      onClick={() => setCurrentPage(prev => Math.min(totalUserPages, prev + 1))}
-                      disabled={currentPage === totalUserPages}
+                      onClick={() => setCurrentPage(prev => (prev < totalUserPages ? prev + 1 : prev))}
+                      disabled={currentPage >= totalUserPages}
                     >
                       Next
                     </button>
@@ -498,13 +670,28 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                             <button onClick={() => handleViewPatient(patient)} className="view-button">
                               <Eye size={16} />
                             </button>
-                            <button onClick={() => handleDeletePatient(patient.id)} className="delete-button">
+                            <button onClick={() => confirmDeletePatient(patient.id, `${patient.firstName} ${patient.lastName}`, patient.imageUrl)} className="delete-button">
                               <Trash2 size={16} />
                             </button>
+
                           </div>
                         </td>
                       </tr>
                     ))}
+
+                    {showPatientConfirmModal && (
+                      <div className="modal-overlay">
+                        <div className="modal">
+                          <h3>Confirm Deletion</h3>
+                          <p>Are you sure you want to delete the patient record for <b>{patientToDelete?.fullName}</b>?</p>
+                          <div className="modal-buttons">
+                            <button className="cancel-btn" onClick={() => setShowPatientConfirmModal(false)}>Cancel</button>
+                            <button className="delete-btn" onClick={handleDeletePatient}>Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </tbody>
                 </table>
                 {filteredPatients.length === 0 ? (
@@ -568,21 +755,23 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                     </div>
                   </div>
 
-                  {selectedPatient.prediction && (
-                    <div className="prediction-section">
-                      <h4>AI Prediction Results</h4>
-                      <pre className="prediction-text">{selectedPatient.prediction}</pre>
+                  {/* Display Patient Image */}
+                  {selectedPatient.imageUrl && (
+                    <div className="image-section">
+                      <h4>Corneal Topography Image</h4>
+                      <img src={selectedPatient.imageUrl} alt="Patient Scan" className="patient-image" />
                     </div>
                   )}
 
-                  {selectedPatient.report && (
-                    <div className="report-section">
-                      <h4>Medical Report</h4>
-                      <p className="report-text">{selectedPatient.report}</p>
+                  {/* Highlight Result Based on Diagnosis */}
+                  <div
+                    className={selectedPatient.prediction && selectedPatient.prediction.includes("Keratoconus") ? "prediction-section red-highlight" : "prediction-section green-highlight"}
+                  >
+                    <h4>AI Analysis Results</h4>
+                    <pre className="prediction-text">{selectedPatient.prediction}</pre>
+                  </div>
                     </div>
                   )}
-                </div>
-              )}
             </div>
           </>
         )}

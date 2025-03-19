@@ -65,7 +65,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     fetchPatients();
   }, []);
 
-  // Filtering logic
+  // Filter and paginate patient records
   const filteredPatients = patients.filter(patient => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch = 
@@ -86,6 +86,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     currentPage * patientsPerPage
   );
 
+  // Handle view details of a patient record
   const handleViewDetails = (patient: PatientRecord) => {
     setSelectedPatient(patient);
     setSelectedFile(null);
@@ -94,15 +95,18 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     setError(null);
   };
 
+  // Format date and time for display 
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString("en-GB", { timeZone: "Asia/Colombo" });
   };
 
+  // Handle pagination 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     setSelectedPatient(null);
   };
 
+  // Handle file selection for image upload 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -118,10 +122,12 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  // Handle drag and drop image upload
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
   };
 
+  // Handle image drop event 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
@@ -136,6 +142,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  // Handle image upload and prediction 
   const handleUpload = async () => {
     if (!selectedFile) return;
 
@@ -157,7 +164,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
 
       const data: PredictionResponse = await response.json();
       
-      // Format the prediction result with the updated terminology
+      // Format the prediction result with the updated terminology 
       const accuracyPercentage = (data.confidence * 100).toFixed(2);
       const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
       setPrediction(predictionText);
@@ -169,6 +176,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  // Handle try again button click 
   const handleTryAgain = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -176,6 +184,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     setError(null);
   };
 
+  // Generate PDF Report 
   const generatePDF = async (patient: PatientRecord) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -184,21 +193,21 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     const lineHeight = 7;
     const margin = 20;
 
-    // Ensure all values are defined to prevent errors
+    // Ensure all values are defined to prevent errors 
     const fullName = `${patient.firstName || "N/A"} ${patient.lastName || "N/A"}`;
     const idNumber = patient.idNumber || "N/A";
     const age = patient.age !== undefined ? patient.age.toString() : "N/A";
     const gender = patient.gender || "N/A";
     const formattedDate = patient.dateTime ? formatDateTime(patient.dateTime) : "N/A";
-    const prediction = patient.prediction ? patient.prediction.trim() : "N/A"; // Trim extra spaces
+    const prediction = patient.prediction ? patient.prediction.trim() : "N/A"; 
 
     console.log("Formatted Values Before PDF:", { fullName, idNumber, age, gender, formattedDate, prediction });
 
-    // Helper function to add a new page
+    // Helper function to add a new page 
     const addNewPage = () => {
       doc.addPage();
       yPos = 20;
-      // Add header to new page
+      // Add header to new page 
       doc.setFillColor(30, 58, 138);
       doc.rect(0, 0, pageWidth, 15, 'F');
       doc.setTextColor(255, 255, 255);
@@ -207,7 +216,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
       doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 10, { align: 'right' });
     };
 
-    // Check if we need to add a new page
+    // Helper function to check and add a new page if required space is not available 
     const checkAndAddNewPage = (requiredSpace: number) => {
       if (yPos + requiredSpace > pageHeight - margin) {
         addNewPage();
@@ -216,7 +225,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
       return false;
     };
 
-    // Add header to first page
+    // Add header to first page 
     doc.setFillColor(30, 58, 138);
     doc.rect(0, 0, pageWidth, 15, 'F');
     doc.setTextColor(255, 255, 255);
@@ -236,7 +245,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.setLineWidth(0.5);
     doc.line(margin, yPos, pageWidth - margin, yPos);
 
-    // Patient Information Section
+    // patient information section 
     yPos += 15;
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
@@ -250,7 +259,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
 
-    // Create two columns for patient information
+    // Create two columns for patient information 
     const col1X = margin + 5;
     const col2X = pageWidth / 2;
     
@@ -264,7 +273,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     yPos += lineHeight;
     doc.text(`Date: ${formatDateTime(patient.dateTime)}`, col1X, yPos);
 
-    // AI Analysis Results Section
+    // AI Analysis Results Section 
     yPos += 20;
     checkAndAddNewPage(60);
     
@@ -280,10 +289,10 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
 
-    const predictionLines = prediction.split('\n').filter(line => line.trim() !== ""); // Remove empty lines
+    const predictionLines = prediction.split('\n').filter(line => line.trim() !== ""); 
     predictionLines.forEach((line, index) => {
       doc.text(line, margin + 5, yPos);
-      yPos += 7; // Add spacing for each new line
+      yPos += 7;
     });
 
     // Medical Report Section
@@ -303,8 +312,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.setTextColor(0, 0, 0);
     doc.text(patient.report, margin + 5, yPos);
 
-    // Add topography images if available
-    if (patient.imageUrl && patient.imageUrl.trim() !== "") { // Ensure URL is valid
+    // Add image if available 
+    if (patient.imageUrl && patient.imageUrl.trim() !== "") { 
       try {
         const img = new Image();
         img.src = patient.imageUrl;
@@ -336,7 +345,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
           imgHeight
         );
         
-        // Add new analysis results if available
+        // Add new analysis results if available 
         if (prediction) {
           yPos += imgHeight + 20;
           checkAndAddNewPage(60);
@@ -363,7 +372,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
       }
     }
 
-    // Add footer to all pages
+    // Add footer to all pages 
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -383,7 +392,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
       );
     }
 
-    // Save the PDF
+    // Save the PDF file 
     doc.save(`medical_report_${idNumber}.pdf`);
   };
 
@@ -542,7 +551,6 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
                 <pre className="prediction-text">{selectedPatient.prediction}</pre>
               </div>
 
-
               <div className="upload-section">
                 <h4>Scan Analysis</h4>
                 <div
@@ -628,7 +636,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
                         onClick={handleTryAgain}
                       >
                         <RotateCcw size={20} />
-                        Analyze Another Image
+                        Try Again
                       </button>
                     </div>
                   </div>

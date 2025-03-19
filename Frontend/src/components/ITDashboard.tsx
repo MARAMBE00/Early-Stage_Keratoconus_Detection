@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Users, UserPlus, Eye, Search, Calendar } from 'lucide-react';
 import { UserRole } from '../types/auth';
 import '../styles/ITDashboard.css';
-import Navbar from './Navbar';
 import { createUser, fetchUsers, deleteUser, updateUser } from '../database/userService';
+import { fetchPatients, deletePatient } from "../database/patientService";
 
 interface User {
   id: string;
@@ -39,34 +39,13 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
   const [formData, setFormData] = useState<Partial<User>>({
     role: 'doctor',
   });
-
-
   const [activeTab, setActiveTab] = useState<'users' | 'patients'>('users');
-  // const [isAddingUser, setIsAddingUser] = useState(false);
-  // const [editingUser, setEditingUser] = useState<User | null>(null);
-  // const [formData, setFormData] = useState<Partial<User>>({
-  //   role: 'doctor'
-  // });
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Sample patients data
-  const [patients, setPatients] = useState<Patient[]>([
-    {
-      id: '1',
-      firstName: 'Alice',
-      lastName: 'Johnson',
-      age: 28,
-      gender: 'female',
-      idNumber: 'P2024001',
-      prediction: 'Result: Normal\nAccuracy: 95.32%',
-      report: 'Regular check-up, no abnormalities detected.',
-      dateTime: '2024-03-15T09:30:00Z'
-    }
-  ]);
+  const [patients, setPatients] = useState<Patient[]>([]);
 
   // Fetch users from Firestore on component mount
   useEffect(() => {
@@ -77,6 +56,18 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     loadUsers();
   }, []);
 
+  // Fetch patients from Firestore on component mount
+  useEffect(() => {
+    const loadPatients = async () => {
+      try {
+        const patientsData = await fetchPatients(); // Fetch from Firestore
+        setPatients(patientsData as Patient[]);
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+      }
+    };
+    loadPatients();
+  }, []);
 
   // Handle adding or updating a user
   const handleUserSubmit = async (e: React.FormEvent) => {
@@ -113,9 +104,15 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     setUsers(users.filter(user => user.id !== id));
   };
 
-  const handleDeletePatient = (id: string) => {
-    setPatients(patients.filter(patient => patient.id !== id));
-    setSelectedPatient(null);
+  // Handle deleting a patient from Firestore
+  const handleDeletePatient = async (id: string) => {
+    try {
+      await deletePatient(id); // Delete from Firestore
+      setPatients(patients.filter(patient => patient.id !== id)); // Update UI
+      setSelectedPatient(null);
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+    }
   };
 
   const handleEditUser = (user: User) => {
@@ -149,7 +146,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
     currentPage * itemsPerPage
   );
 
-  // Filter and pagination logic for patients
+  // Filter and paginate patient data
   const filteredPatients = patients.filter(patient => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch = (
@@ -405,9 +402,11 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                             <button onClick={() => handleEditUser(user)} className="edit-button">
                               <Edit2 size={16} />
                             </button>
-                            <button onClick={() => handleDeleteUser(user.id, user.username)} className="delete-button">
-                              <Trash2 size={16} />
-                            </button>
+                            {user.username !== "IT" && ( // Hide delete button for IT user
+                              <button onClick={() => handleDeleteUser(user.id, user.username)} className="delete-button">
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

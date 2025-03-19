@@ -1,9 +1,38 @@
-import { collection, getDocs, addDoc, query, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy, limit } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "./firebaseConfig";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
 const patientsCollection = collection(db, "patients");
+
+export interface Patient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  gender: "male" | "female" | "other";
+  idNumber: string;
+  prediction?: string;
+  dateTime: string;
+  imageUrl?: string;
+}
+
+// Function to fetch all patients from Firestore
+export const fetchPatients = async (): Promise<Patient[]> => {
+  try {
+    const snapshot = await getDocs(patientsCollection);
+
+    const patients: Patient[] = snapshot.docs.map((doc) => ({
+      id: doc.id, // Firestore document ID
+      ...doc.data(),
+    })) as Patient[];
+
+    return patients;
+  } catch (error) {
+    console.error("Error fetching patients from Firestore:", error);
+    throw error;
+  }
+};
 
 // Function to get the last patient ID and increment
 export const getNextPatientID = async () => {
@@ -59,4 +88,9 @@ export const savePatientData = async (patientData: any) => {
       console.error("Error saving patient data:", error);
       throw error;
     }
-  };
+};
+
+// Delete a Patient from Firestore
+export const deletePatient = async (id: string) => {
+  await deleteDoc(doc(db, "patients", id));
+};

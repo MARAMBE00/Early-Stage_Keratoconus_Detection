@@ -49,6 +49,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     }
   };
 
+  // Drag and Drop functionality 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
   };
@@ -68,6 +69,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     }
   };
 
+  // Image processing and prediction
   const handleUpload = async () => {
     if (!selectedFile) return;
 
@@ -94,27 +96,27 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
       setPrediction(predictionText);
 
-      // Generate the patient ID when the form is about to appear
+      // Generate the patient ID when the form is about to appear 
       console.log("Fetching next patient ID...");
       const newPatientID = await getNextPatientID();
       console.log("New Patient ID:", newPatientID);
 
       // Convert current date-time to Sri Lanka time (GMT+5:30)
       const localDateTime = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Asia/Colombo",  // Sri Lanka Timezone
+        timeZone: "Asia/Colombo",  
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        hour12: false,  // 24-hour format
+        hour12: false,  
       }).format(new Date());
       
-      // Set ID & formatted date before showing form
+      // Set ID & formatted date before showing form 
       setPatientData({
         idNumber: newPatientID,
-        dateTime: localDateTime, // Save formatted Sri Lanka time
+        dateTime: localDateTime, 
       });
 
       setShowPatientForm(true);
@@ -127,6 +129,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     }
   };
 
+  // Reset the form and state 
   const handleTryAgain = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -136,6 +139,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     setError(null);
   };
 
+  // Submit the patient data to Firestore 
   const handlePatientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
@@ -155,7 +159,8 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       const newPatientID = await getNextPatientID();
       console.log("New Patient ID:", newPatientID);
 
-      setPatientData((prev) => ({ ...prev, idNumber: newPatientID })); // Set ID Number
+      // Set the patient ID before uploading the image 
+      setPatientData((prev) => ({ ...prev, idNumber: newPatientID })); 
   
       console.log("Uploading image...");
       const imageUrl = await uploadPatientImage(selectedFile, newPatientID);
@@ -187,7 +192,6 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     }
   };
   
-
   return (
     <div className="topographer-dashboard">
       <div className="dashboard-content">

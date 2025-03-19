@@ -52,7 +52,6 @@ export const createUser = async (userData: any) => {
   await setDoc(userRef, userData);
 };
 
-
 // Function to delete a user from Firestore
 export const deleteUser = async (username: string) => {
   const userRef = doc(usersCollection, username);

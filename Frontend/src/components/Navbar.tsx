@@ -10,6 +10,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ role, onLogout, username }) => {
+  // Display Icon
   const getRoleIcon = () => {
     switch (role) {
       case 'it':
@@ -23,6 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({ role, onLogout, username }) => {
     }
   };
 
+  // Display Full Name
   const getRoleTitle = () => {
     switch (role) {
       case 'it':

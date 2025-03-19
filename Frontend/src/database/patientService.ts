@@ -23,12 +23,12 @@ export const getNextPatientID = async () => {
 // Function to upload image to Firebase Storage
 export const uploadPatientImage = async (file: File, patientID: string) => {
   try {
-      const auth = getAuth();  // ✅ Get Firebase Auth instance
+      const auth = getAuth();  // Get Firebase Auth instance
       let user = auth.currentUser;
 
       if (!user) {
           console.warn("User is not logged in. Attempting anonymous sign-in...");
-          const userCredential = await signInAnonymously(auth); // ✅ Auto login anonymously
+          const userCredential = await signInAnonymously(auth); // Auto login anonymously
           user = userCredential.user;
       }
 

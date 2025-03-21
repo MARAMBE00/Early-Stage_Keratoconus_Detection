@@ -3,6 +3,8 @@ import { ArrowLeft, Award, Users, HeartPulse, Microscope } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
 import '../styles/AboutUs.css';
+import ourStory from '../images/ourStory.jpg';
+import ourApproach from '../images/ourApproach.jpg';
 
 const AboutUs: React.FC = () => {
   return (
@@ -22,21 +24,23 @@ const AboutUs: React.FC = () => {
         <section className="about-section">
           <div className="section-image">
             <img 
-              src="https://images.unsplash.com/photo-1581595219315-a187dd40c322?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+              src={ourStory} 
               alt="Modern medical facility" 
             />
           </div>
           <div className="section-content">
             <h2>Our Story</h2>
             <p>
-              Founded in 2015, our medical facility has been at the forefront of integrating 
-              artificial intelligence with ophthalmology. What began as a small research project 
-              has grown into a comprehensive eye care center that serves thousands of patients annually.
+              Founded in 2025, our software project is dedicated to revolutionizing early-stage keratoconus detection 
+              through the power of artificial intelligence. What began as a research-driven initiative has evolved 
+              into an advanced diagnostic tool, leveraging corneal topography images and NASNet to enhance precision and 
+              accessibility in ophthalmology.
             </p>
             <p>
-              Our journey started when a team of ophthalmologists and AI researchers came together 
-              with a shared vision: to make early detection of keratoconus and other corneal 
-              conditions more accessible, accurate, and efficient.
+              Our journey started when a team of AI researchers and medical imaging specialists came together with a shared 
+              vision: to develop an intelligent, automated system that assists clinicians in the early detection of keratoconus. 
+              By integrating deep learning with ophthalmic diagnostics, our software aims to provide faster, more accurate, and 
+              accessible screening solutions, ultimately improving patient outcomes and advancing the future of AI-powered eye care.
             </p>
           </div>
         </section>
@@ -78,7 +82,7 @@ const AboutUs: React.FC = () => {
         <section className="about-section reverse">
           <div className="section-image">
             <img 
-              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+              src={ourApproach}
               alt="Medical professionals collaborating" 
             />
           </div>
@@ -86,13 +90,12 @@ const AboutUs: React.FC = () => {
             <h2>Our Approach</h2>
             <p>
               At our facility, we combine cutting-edge AI technology with the expertise of 
-              experienced ophthalmologists to provide the most accurate diagnoses and effective 
-              treatment plans for our patients.
+              experienced ophthalmologists to provide the most accurate diagnoses for our patients.
             </p>
             <p>
               Our proprietary AI system has been trained on thousands of corneal topography 
               images, enabling it to detect subtle patterns that might indicate early stages 
-              of keratoconus and other corneal abnormalities with remarkable precision.
+              of keratoconus.
             </p>
             <p>
               This technology-enhanced approach allows us to intervene earlier, potentially 
@@ -101,44 +104,6 @@ const AboutUs: React.FC = () => {
           </div>
         </section>
 
-        <section className="team-section">
-          <h2>Our Leadership Team</h2>
-          <div className="team-grid">
-            <div className="team-member">
-              <div className="member-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
-                  alt="Dr. Sarah Johnson" 
-                />
-              </div>
-              <h3>Dr. Sarah Johnson</h3>
-              <p className="member-title">Chief Medical Officer</p>
-              <p>Board-certified ophthalmologist with over 15 years of experience in corneal disorders.</p>
-            </div>
-            <div className="team-member">
-              <div className="member-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1537368910025-700350fe46c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
-                  alt="Dr. Michael Chen" 
-                />
-              </div>
-              <h3>Dr. Michael Chen</h3>
-              <p className="member-title">Director of AI Research</p>
-              <p>PhD in Computer Science with specialization in medical image processing and machine learning.</p>
-            </div>
-            <div className="team-member">
-              <div className="member-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
-                  alt="Dr. Emily Rodriguez" 
-                />
-              </div>
-              <h3>Dr. Emily Rodriguez</h3>
-              <p className="member-title">Head of Clinical Operations</p>
-              <p>Experienced healthcare administrator focused on optimizing patient care workflows.</p>
-            </div>
-          </div>
-        </section>
       </div>
 
       <Footer />

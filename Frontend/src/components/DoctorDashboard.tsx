@@ -165,8 +165,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
       const data: PredictionResponse = await response.json();
       
       // Format the prediction result with the updated terminology 
-      const accuracyPercentage = (data.confidence * 100).toFixed(2);
-      const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
+      //const accuracyPercentage = (data.confidence * 100).toFixed(2);
+      //const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
+      const predictionText = `Result: ${data.predicted_class}`;
       setPrediction(predictionText);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during prediction');
@@ -193,39 +194,26 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     const lineHeight = 7;
     const margin = 20;
 
-    // Ensure all values are defined to prevent errors 
-    const fullName = `${patient.firstName || "N/A"} ${patient.lastName || "N/A"}`;
-    const idNumber = patient.idNumber || "N/A";
-    const age = patient.age !== undefined ? patient.age.toString() : "N/A";
-    const gender = patient.gender || "N/A";
-    const formattedDate = patient.dateTime ? formatDateTime(patient.dateTime) : "N/A";
-    const prediction = patient.prediction ? patient.prediction.trim() : "N/A"; 
+    // Function to safely retrieve text values
+    const safeText = (text: any) => (text !== undefined && text !== null ? String(text) : "");
 
-    console.log("Formatted Values Before PDF:", { fullName, idNumber, age, gender, formattedDate, prediction });
-
-    // Helper function to add a new page 
+    // Helper function to add a new page with a header
     const addNewPage = () => {
-      doc.addPage();
-      yPos = 20;
-      // Add header to new page 
-      doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, pageWidth, 15, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
-      doc.text('KeratoScan AI - Medical Report', pageWidth / 2, 10, { align: 'center' });
-      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 10, { align: 'right' });
+        doc.addPage();
+        yPos = 20;
+
+        // Reapply header styling
+        doc.setFillColor(30, 58, 138);
+        doc.rect(0, 0, pageWidth, 15, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text('KeratoScan AI - Medical Report', pageWidth / 2, 10, { align: 'center' });
+        doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 10, { align: 'right' });
+
+        yPos += 20; // Ensure proper spacing after header
     };
 
-    // Helper function to check and add a new page if required space is not available 
-    const checkAndAddNewPage = (requiredSpace: number) => {
-      if (yPos + requiredSpace > pageHeight - margin) {
-        addNewPage();
-        return true;
-      }
-      return false;
-    };
-
-    // Add header to first page 
+    // Add header for first page
     doc.setFillColor(30, 58, 138);
     doc.rect(0, 0, pageWidth, 15, 'F');
     doc.setTextColor(255, 255, 255);
@@ -233,168 +221,179 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
     doc.text('KeratoScan AI - Medical Report', pageWidth / 2, 10, { align: 'center' });
     doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 10, { align: 'right' });
 
-    // Add logo and title
-    yPos = 40;
+    // Title
+    yPos += 10;
     doc.setTextColor(30, 58, 138);
     doc.setFontSize(24);
     doc.text('Patient Medical Report', pageWidth / 2, yPos, { align: 'center' });
-    
-    // Add decorative line
-    yPos += 5;
+
+    // Decorative Line
+    yPos += 10;
     doc.setDrawColor(30, 58, 138);
     doc.setLineWidth(0.5);
     doc.line(margin, yPos, pageWidth - margin, yPos);
 
-    // patient information section 
+    // Patient Information
     yPos += 15;
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
-    
+
     yPos += 10;
     doc.setFontSize(14);
     doc.setTextColor(30, 58, 138);
     doc.text('Patient Information', margin + 5, yPos);
-    
+
     yPos += 10;
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
 
-    // Create two columns for patient information 
     const col1X = margin + 5;
     const col2X = pageWidth / 2;
     
-    doc.text(`Name: ${patient.firstName} ${patient.lastName}`, col1X, yPos);
-    doc.text(`ID Number: ${patient.idNumber}`, col2X, yPos);
-    
-    yPos += lineHeight;
-    doc.text(`Age: ${patient.age}`, col1X, yPos);
-    doc.text(`Gender: ${patient.gender}`, col2X, yPos);
-    
-    yPos += lineHeight;
-    doc.text(`Date: ${formatDateTime(patient.dateTime)}`, col1X, yPos);
+    doc.text(`Name: ${safeText(patient.firstName)} ${safeText(patient.lastName)}`, col1X, yPos);
+    doc.text(`ID Number: ${safeText(patient.idNumber)}`, col2X, yPos);
 
-    // AI Analysis Results Section 
-    yPos += 20;
-    checkAndAddNewPage(60);
+    yPos += lineHeight;
+    doc.text(`Age: ${safeText(patient.age)}`, col1X, yPos);
+    doc.text(`Gender: ${safeText(patient.gender)}`, col2X, yPos);
+
+    yPos += lineHeight;
+    doc.text(`Date: ${safeText(formatDateTime(patient.dateTime))}`, col1X, yPos);
+
+    // Corneal Topography Image
+    if (patient.imageUrl) {
+        try {
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // Handle CORS issues
+            img.src = patient.imageUrl;
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+
+            yPos += 20;
+            if (yPos + 80 > pageHeight - margin) addNewPage();
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(margin, yPos, pageWidth - margin * 2, 110, "F");
+
+            yPos += 10;
+            doc.setFontSize(14);
+            doc.setTextColor(30, 58, 138);
+            doc.text("Corneal Topography Image", margin + 5, yPos);
+
+            yPos += 10;
+
+            // Scale image
+            const maxWidth = 120;
+            const maxHeight = 80;
+            let imgWidth = img.width;
+            let imgHeight = img.height;
+            const ratio = Math.min(maxWidth / imgWidth, maxHeight / imgHeight);
+            imgWidth *= ratio;
+            imgHeight *= ratio;
+
+            doc.addImage(img, "JPEG", (pageWidth - imgWidth) / 2, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 10;
+
+        } catch (error) {
+            console.error("Error adding image to PDF:", error);
+        }
+    }
+
+    // AI Analysis Results
+    if (yPos + 55 > pageHeight - margin) addNewPage();
     
     doc.setFillColor(241, 245, 249);
-    doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
-    
+    doc.rect(margin, yPos, pageWidth - (margin * 2), 30, 'F');
+
     yPos += 10;
     doc.setFontSize(14);
     doc.setTextColor(30, 58, 138);
-    doc.text('AI Analysis Results', margin + 5, yPos);
-    
+    doc.text('Analysis Results', margin + 5, yPos);
+
     yPos += 10;
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
 
-    const predictionLines = prediction.split('\n').filter(line => line.trim() !== ""); 
-    predictionLines.forEach((line, index) => {
-      doc.text(line, margin + 5, yPos);
-      yPos += 7;
+    const predictionLines = safeText(patient.prediction).split('\n');
+    predictionLines.forEach(line => {
+        if (yPos + lineHeight > pageHeight - margin) addNewPage();
+        doc.text(line, margin + 5, yPos);
+        yPos += lineHeight;
     });
 
-    // Medical Report Section
-    yPos += 10;
-    checkAndAddNewPage(60);
-    
-    doc.setFillColor(241, 245, 249);
-    doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
-    
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setTextColor(30, 58, 138);
-    doc.text('Medical Report', margin + 5, yPos);
-    
-    yPos += 10;
-    doc.setFontSize(11);
-    doc.setTextColor(0, 0, 0);
-    doc.text(patient.report, margin + 5, yPos);
-
-    // Add image if available 
-    if (patient.imageUrl && patient.imageUrl.trim() !== "") { 
-      try {
-        const img = new Image();
-        img.src = patient.imageUrl;
-        await new Promise(resolve => {
-          img.onload = resolve;
-        });
-        
-        yPos += 20;
-        checkAndAddNewPage(100);
-        
-        doc.setFillColor(241, 245, 249);
-        doc.rect(margin, yPos, pageWidth - (margin * 2), 120, 'F');
-        
-        yPos += 10;
-        doc.setFontSize(14);
-        doc.setTextColor(30, 58, 138);
-        doc.text('Corneal Topography Image', margin + 5, yPos);
-        
-        yPos += 10;
-        const imgWidth = 150;
-        const imgHeight = (img.height * imgWidth) / img.width;
-        
-        doc.addImage(
-          img,
-          'JPEG',
-          (pageWidth - imgWidth) / 2,
-          yPos,
-          imgWidth,
-          imgHeight
-        );
-        
-        // Add new analysis results if available 
-        if (prediction) {
-          yPos += imgHeight + 20;
-          checkAndAddNewPage(60);
-          
-          doc.setFillColor(241, 245, 249);
-          doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
-          
-          yPos += 10;
-          doc.setFontSize(14);
-          doc.setTextColor(30, 58, 138);
-          doc.text('New Analysis Results', margin + 5, yPos);
-          
-          yPos += 10;
-          doc.setFontSize(11);
-          doc.setTextColor(0, 0, 0);
-          const newPredictionLines = prediction.split('\n');
-          newPredictionLines.forEach(line => {
-            doc.text(line, margin + 5, yPos);
-            yPos += lineHeight;
-          });
-        }
-      } catch (error) {
-        console.error('Error adding image to PDF:', error);
-      }
-    }
-
-    // Add footer to all pages 
-    const totalPages = doc.getNumberOfPages();
+    // Add footer to all pages
+    const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text(
-        `Page ${i} of ${totalPages}`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      );
-      doc.text(
-        'KeratoScan AI © 2024 - Confidential Medical Report',
-        pageWidth - margin,
-        pageHeight - 10,
-        { align: 'right' }
-      );
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+        doc.text("KeratoScan AI © 2025 - Confidential Medical Report", pageWidth - margin, pageHeight - 10, { align: "right" });
     }
 
-    // Save the PDF file 
-    doc.save(`medical_report_${idNumber}.pdf`);
+    // If new analysis is available, print image and results
+    if (prediction && prediction.trim() !== "" && previewUrl) {
+        yPos += 20;
+        if (yPos + 80 > pageHeight - margin) addNewPage();
+
+        try {
+            const newImg = new Image();
+            newImg.crossOrigin = "Anonymous"; 
+            newImg.src = previewUrl;
+
+            await new Promise((resolve, reject) => {
+                newImg.onload = resolve;
+                newImg.onerror = reject;
+            });
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(margin, yPos, pageWidth - margin * 2, 110, "F");
+
+            yPos += 10;
+            doc.setFontSize(14);
+            doc.setTextColor(30, 58, 138);
+            doc.text("New Analyzed Image", margin + 5, yPos);
+
+            yPos += 10;
+            const ratio = Math.min(120 / newImg.width, 80 / newImg.height);
+            const imgWidth = newImg.width * ratio;
+            const imgHeight = newImg.height * ratio;
+
+            doc.addImage(newImg, "JPEG", (pageWidth - imgWidth) / 2, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 10;
+
+            if (yPos + 40 > pageHeight - margin) addNewPage();
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(margin, yPos, pageWidth - (margin * 2), 40, 'F');
+
+            yPos += 10;
+            doc.setFontSize(14);
+            doc.setTextColor(30, 58, 138);
+            doc.text('New Analysis Results', margin + 5, yPos);
+
+            yPos += 10;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+
+            const newPredictionLines = prediction.split('\n');
+            newPredictionLines.forEach(line => {
+                if (yPos + lineHeight > pageHeight - margin) addNewPage();
+                doc.text(line, margin + 5, yPos);
+                yPos += lineHeight;
+            });
+
+        } catch (error) {
+            console.error("Error adding new analysis image to PDF:", error);
+        }
+    }
+
+    doc.save(`medical_report_${safeText(patient.idNumber)}.pdf`);
   };
+
 
   return (
     <div className="doctor-dashboard">

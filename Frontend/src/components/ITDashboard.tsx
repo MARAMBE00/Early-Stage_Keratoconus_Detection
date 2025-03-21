@@ -518,6 +518,14 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
                 />
               </div>
               <div className="form-group">
+                <label>Phone:</label>
+                <input
+                  type="tel"
+                  value={formData.phone || ''}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
                 <label>Role:</label>
                 <select
                   value={formData.role || 'doctor'}

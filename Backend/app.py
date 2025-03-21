@@ -11,7 +11,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the trained model
-MODEL_PATH = "E:/IIT/Lectures/4 Year/FYP/Model/NASNet/FYPNasnet3.2.5.h5"
+MODEL_PATH = "E:/IIT/Lectures/4 Year/FYP/Model/NASNet/Final_tuned_4.keras"
 model = load_model(MODEL_PATH, compile=False)
 
 # Define the class labels

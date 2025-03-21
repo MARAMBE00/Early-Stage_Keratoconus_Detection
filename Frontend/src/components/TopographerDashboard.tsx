@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileUp, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import '../styles/TopographerDashboard.css';
 import { getNextPatientID, uploadPatientImage, savePatientData } from "../database/patientService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; 
 
 interface PatientData {
   firstName: string;
@@ -32,6 +34,9 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
   const [patientData, setPatientData] = useState<Partial<PatientData>>({});
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [showProgressBar, setShowProgressBar] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -92,8 +97,9 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       const data: PredictionResponse = await response.json();
       
       // Format the prediction result with the updated terminology
-      const accuracyPercentage = (data.confidence * 100).toFixed(2);
-      const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
+      //const accuracyPercentage = (data.confidence * 100).toFixed(2);
+      //const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
+      const predictionText = `Result: ${data.predicted_class}`;
       setPrediction(predictionText);
 
       // Generate the patient ID when the form is about to appear 
@@ -139,22 +145,29 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     setError(null);
   };
 
+  const handleConfirmSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowConfirmModal(true); // Show confirmation modal
+  };  
+
   // Submit the patient data to Firestore 
   const handlePatientSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    setShowConfirmModal(false);
+    setIsUploading(true);
+    setShowProgressBar(true); // Show progress bar
+    setProgress(10); // Initial progress
+    setError(null);
   
     console.log("Submit button clicked!");
   
-    if (!selectedFile) {
-      console.error("No image uploaded!");
-      setError("No image uploaded!");
-      return;
-    }
-  
-    setIsUploading(true);
-    setError(null);
-  
     try {
+      if (!selectedFile) {
+        console.error("No image uploaded!");
+        setShowProgressBar(false);
+        setError("No image uploaded!");
+        return;
+      }
+
       console.log("Fetching next patient ID...");
       const newPatientID = await getNextPatientID();
       console.log("New Patient ID:", newPatientID);
@@ -163,10 +176,12 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
       setPatientData((prev) => ({ ...prev, idNumber: newPatientID })); 
   
       console.log("Uploading image...");
+      setProgress(30);
       const imageUrl = await uploadPatientImage(selectedFile, newPatientID);
       console.log("Image uploaded. URL:", imageUrl);
   
       console.log("Saving patient data to Firestore...");
+      setProgress(60);
       const currentDateTime = new Date().toISOString();
       const fullPatientData = {
         idNumber: newPatientID,
@@ -179,14 +194,46 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
         imageUrl: imageUrl,
       };
   
+      setProgress(80); 
       await savePatientData(fullPatientData);
       console.log("Patient data saved:", fullPatientData);
   
       console.log("Resetting form...");
+
+      setProgress(100); 
+      // 🎉 Show success toast notification
+      toast.success("Patient data submitted successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+
+      setTimeout(() => {
+        setShowProgressBar(false); // Hide progress bar after success
+        handleTryAgain();
+      }, 1000);
+
       handleTryAgain();
     } catch (err) {
       console.error("Error submitting patient data:", err);
       setError(err instanceof Error ? err.message : "Error saving patient data");
+      
+      // Show error toast notification
+      toast.error("Failed to submit patient data. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+
+      setShowProgressBar(false); 
     } finally {
       setIsUploading(false);
     }
@@ -198,14 +245,14 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
         <div className="upload-section">
           <div className="instructions">
             <h3>Instructions:</h3>
-            <ol>
+            <ul>
               <li>Upload a clear, high-resolution image</li>
-              <li>Supported formats: JPG, PNG</li>
+              <li>Supported formats: JPG, PNG, JPEG</li>
               <li>Maximum file size: 10MB</li>
               <li>Ensure proper lighting in the image</li>
               <li>Wait for the prediction results</li>
               <li>Fill in patient details when prompted</li>
-            </ol>
+            </ul>
           </div>
 
           <div
@@ -232,7 +279,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
               <div className="upload-placeholder">
                 <Upload size={48} />
                 <p>Click or drag image here</p>
-                <span>Supported formats: JPG, PNG</span>
+                <span>Supported formats: JPG, PNG, JPEG</span>
               </div>
             )}
           </div>
@@ -378,10 +425,30 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
                 />
               </div>
 
-              <button type="submit" className="submit-button">
+              <button type="button" className="submit-button" onClick={handleConfirmSubmit}>
                 <FileUp size={20} />
                 <span>Submit Patient Data</span>
               </button>
+
+              {showProgressBar && (
+                <div className="progress-bar-container">
+                  <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+                </div>
+              )}
+
+              {showConfirmModal && (
+                <div className="modal-overlay">
+                  <div className="modal">
+                    <h3>Confirm Submission</h3>
+                    <p>Are you sure you want to submit this patient’s data?</p>
+                    <div className="modal-buttons">
+                      <button className="cancel-btn" onClick={() => setShowConfirmModal(false)}>Cancel</button>
+                      <button className="confirm-btn" onClick={handlePatientSubmit}>Submit</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </form>
           )}
         </div>

@@ -90,16 +90,18 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get prediction');
-      }
-
       const data: PredictionResponse = await response.json();
+
+      if (!response.ok) {
+        // Handle error from backend
+        const errorMessage = (data as { error?: string }).error || "Failed to get prediction";
+        throw new Error(errorMessage);
+      }  
       
       // Format the prediction result with the updated terminology
-      //const accuracyPercentage = (data.confidence * 100).toFixed(2);
-      //const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
-      const predictionText = `Result: ${data.predicted_class}`;
+      const accuracyPercentage = (data.confidence * 100).toFixed(2);
+      const predictionText = `Result: ${data.predicted_class}\nConfidence: ${accuracyPercentage}%`;
+      //const predictionText = `Result: ${data.predicted_class}`;
       setPrediction(predictionText);
 
       // Generate the patient ID when the form is about to appear 
@@ -135,6 +137,28 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
     }
   };
 
+  // Form validation
+  const validateForm = () => {
+    if (
+      !patientData.firstName ||
+      !patientData.lastName ||
+      !patientData.age ||
+      !patientData.gender
+    ) {
+      toast.error("Please fill in all required fields before submitting.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+      return false;
+    }
+    return true;
+  };  
+
   // Reset the form and state 
   const handleTryAgain = () => {
     setSelectedFile(null);
@@ -152,14 +176,21 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
 
   // Submit the patient data to Firestore 
   const handlePatientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setShowConfirmModal(false);
     setIsUploading(true);
     setShowProgressBar(true); // Show progress bar
     setProgress(10); // Initial progress
     setError(null);
+
+    if (!validateForm()) {
+      setIsUploading(false);
+      setShowProgressBar(false);
+      return;
+    }      
   
     console.log("Submit button clicked!");
-  
+
     try {
       if (!selectedFile) {
         console.error("No image uploaded!");
@@ -193,6 +224,12 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
         dateTime: currentDateTime,
         imageUrl: imageUrl,
       };
+
+      if (!validateForm()) {
+        setIsUploading(false);
+        setShowProgressBar(false);
+        return;
+      }
   
       setProgress(80); 
       await savePatientData(fullPatientData);
@@ -202,7 +239,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
 
       setProgress(100); 
       // 🎉 Show success toast notification
-      toast.success("Patient data submitted successfully! 🎉", {
+      toast.success("Patient data submitted successfully!", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -241,6 +278,7 @@ const TopographerDashboard: React.FC<TopographerDashboardProps> = ({ onLogout })
   
   return (
     <div className="topographer-dashboard">
+      <ToastContainer />
       <div className="dashboard-content">
         <div className="upload-section">
           <div className="instructions">

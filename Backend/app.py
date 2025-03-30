@@ -11,11 +11,15 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the trained model
-MODEL_PATH = "E:/IIT/Lectures/4 Year/FYP/Model/NASNet/Final_tuned_4.keras"
+MODEL_PATH = "E:/IIT/Lectures/4 Year/FYP/Model/NASNet/Final_tuned_3.keras"
 model = load_model(MODEL_PATH, compile=False)
 
 # Define the class labels
 CLASS_LABELS = {0: "Keratoconus", 1: "Normal"}
+
+# Maximum file size limit (10 MB)
+MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 # Preprocessing function
 def preprocess_image(image, target_size=(224, 224)):
@@ -32,6 +36,14 @@ def predict():
         return jsonify({"error": "No image file provided."}), 400
 
     file = request.files['image']
+
+    # Check file size
+    file.seek(0, 2)  # Move to end of file to get size
+    file_size = file.tell()
+    file.seek(0)  # Reset file pointer
+
+    if file_size > MAX_FILE_SIZE_BYTES:
+        return jsonify({"error": "File size exceeds the 10MB limit."}), 400
 
     # Check if the file is an image
     if file.filename == '' or not file.filename.lower().endswith(('png', 'jpeg', 'jpg')):
@@ -67,7 +79,7 @@ def predict():
 
 @app.route('/')
 def index():
-    return "NASNetMobile Classification Backend is Running!"
+    return "NASNetMobile Classification Backend is Running!!!"
 
 if __name__ == '__main__':
     # Run the app on the specified port

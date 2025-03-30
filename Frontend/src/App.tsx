@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { UserRole, LoginCredentials, AuthState } from './types/auth';
 import LoginForm from './components/LoginForm';
@@ -32,14 +32,24 @@ function App() {
   };
 
   const handleLogin = (user: { username: string; firstName: string; lastName: string; role: UserRole }) => {
-    setAuth({
+    const userData = {
       isAuthenticated: true,
       role: user.role,
       username: user.username,
-      firstName: user.firstName,  
-      lastName: user.lastName,  
-    });
-  };  
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+    setAuth(userData);
+    localStorage.setItem('auth', JSON.stringify(userData)); // Save to localStorage
+  };
+
+  useEffect(() => {
+    const storedAuth = localStorage.getItem('auth');
+    if (storedAuth) {
+      setAuth(JSON.parse(storedAuth));
+    }
+  }, []);
+  
 
   const handleBack = () => {
     setSelectedRole(null);
@@ -54,8 +64,9 @@ function App() {
       lastName: null,
     });
     setSelectedRole(null);
+    localStorage.removeItem('auth'); // Remove from localStorage
   };
-
+  
   const renderContent = () => {
     if (auth.isAuthenticated) {
       switch (auth.role) {

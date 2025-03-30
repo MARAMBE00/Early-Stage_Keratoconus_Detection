@@ -158,16 +158,18 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout }) => {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get prediction');
-      }
-
       const data: PredictionResponse = await response.json();
+
+      if (!response.ok) {
+        // Handle error from backend
+        const errorMessage = (data as { error?: string }).error || "Failed to get prediction";
+        throw new Error(errorMessage);
+      }  
       
       // Format the prediction result with the updated terminology 
-      //const accuracyPercentage = (data.confidence * 100).toFixed(2);
-      //const predictionText = `Result: ${data.predicted_class}\nAccuracy: ${accuracyPercentage}%`;
-      const predictionText = `Result: ${data.predicted_class}`;
+      const accuracyPercentage = (data.confidence * 100).toFixed(2);
+      const predictionText = `Result: ${data.predicted_class}\nConfidence: ${accuracyPercentage}%`;
+      //const predictionText = `Result: ${data.predicted_class}`;
       setPrediction(predictionText);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during prediction');

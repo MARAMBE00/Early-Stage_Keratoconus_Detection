@@ -106,7 +106,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
       const existingUser = users.find(user => user.username === formData.username);
 
       if (existingUser && !editingUser) {
-        // If user exists and we're not in edit mode, prevent duplicate
+        // If user exists
         toast.error("Username already exists! Please choose a different username.", {
           position: "top-right",
           autoClose: 3000,
@@ -129,7 +129,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
         await updateUser(updatedUser);
         setUsers(users.map(user => (user.id === editingUser.id ? updatedUser : user)));
 
-        toast.info("User updated successfully! ✅", {
+        toast.info("User updated successfully!", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -149,7 +149,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
         setUsers([...users, newUser]);
 
         // Show success toast
-        toast.success("User added successfully! 🎉", {
+        toast.success("User added successfully!", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -237,7 +237,7 @@ const ITDashboard: React.FC<ITDashboardProps> = ({ onLogout }) => {
       setPatients(patients.filter((patient) => patient.id !== patientToDelete.id));
       setShowPatientConfirmModal(false);
       
-      toast.success("Patient record and image deleted successfully! 🎉", {
+      toast.success("Patient record and image deleted successfully!", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,

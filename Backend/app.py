@@ -17,8 +17,8 @@ model = load_model(MODEL_PATH, compile=False)
 # Define the class labels
 CLASS_LABELS = {0: "Keratoconus", 1: "Normal"}
 
-# Maximum file size limit (10 MB)
-MAX_FILE_SIZE_MB = 10
+# Maximum file size limit (20 MB)
+MAX_FILE_SIZE_MB = 20
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 # Preprocessing function
@@ -43,7 +43,7 @@ def predict():
     file.seek(0)  # Reset file pointer
 
     if file_size > MAX_FILE_SIZE_BYTES:
-        return jsonify({"error": "File size exceeds the 10MB limit."}), 400
+        return jsonify({"error": "File size exceeds the 20MB limit."}), 400
 
     # Check if the file is an image
     if file.filename == '' or not file.filename.lower().endswith(('png', 'jpeg', 'jpg')):

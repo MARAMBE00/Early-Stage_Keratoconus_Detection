@@ -37,6 +37,11 @@ KeratoScan AI is an AI-driven diagnostic tool designed to detect early-stage ker
 
 Ideal for clinical environments and telemedicine platforms where early keratoconus detection is critical but expert tools may not be accessible. It enhances screening accuracy and can support ophthalmologists in diagnosis.
 
+## 📷 Screenshots
+<img width="1379" height="900" alt="Home Page" src="https://github.com/user-attachments/assets/a02d9021-98e8-4654-943b-bf2697023443" />
+<img width="1385" height="757" alt="IT User's Dashboard" src="https://github.com/user-attachments/assets/f531d7f6-cab2-4372-b5d2-ce0b540a3f98" />
+<img width="1287" height="1096" alt="Doctor's Dashboard" src="https://github.com/user-attachments/assets/f268f792-f698-48d9-828a-86498cd6e6d0" />
+<img width="1324" height="1956" alt="Thopographer's Dashboard" src="https://github.com/user-attachments/assets/0604eb93-1c64-4e12-9ff3-393a02351ac7" />
 
 ## 🙏 Acknowledgments
 
